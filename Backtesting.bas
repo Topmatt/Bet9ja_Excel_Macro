@@ -78,6 +78,8 @@ Public Sub CheckBM22xBM23Combinations()
 	RunBM22xBM23OnSheet ThisWorkbook.Worksheets(wsName)
 End Sub
 
+'' Removed per user request: BandMasterBySheetGroups, ColorMasterBySheetFixed, AddMasterButtons
+
 Public Sub CheckBM22xBM23_AllSheetsExceptMaster()
 	Dim ws As Worksheet
 	Dim totalSheets As Long, processedSheets As Long
@@ -292,6 +294,37 @@ Public Sub ConsolidateResultsToMaster()
     If nextRow > outStart.Row + 1 Then
         Set rngOut = master.Range(outStart, master.Cells(nextRow - 1, outStart.Column + 5))
         StyleMaster rngOut
+        ' Inline: color rows by sheet using a fixed color per unique sheet
+        Dim headerRow As Long: headerRow = outStart.Row
+        Dim firstCol As Long: firstCol = outStart.Column
+        Dim colsToColor As Long: colsToColor = 6 ' E..J
+        Dim lastRowOut As Long: lastRowOut = nextRow - 1
+        Dim dict As Object: Set dict = CreateObject("Scripting.Dictionary")
+        Dim palette As Variant
+        Dim colorIndex As Long
+        Dim rr As Long
+        Dim key As String
+        palette = Array( _
+            RGB(235, 241, 255), _
+            RGB(242, 242, 242), _
+            RGB(255, 242, 204), _
+            RGB(226, 239, 218), _
+            RGB(217, 225, 242), _
+            RGB(252, 229, 205), _
+            RGB(229, 224, 236), _
+            RGB(204, 232, 255) _
+        )
+        master.Range(master.Cells(headerRow + 1, firstCol), master.Cells(lastRowOut, firstCol).Offset(0, colsToColor - 1)).Interior.ColorIndex = xlNone
+        For rr = headerRow + 1 To lastRowOut
+            key = CStr(master.Cells(rr, firstCol).Value)
+            If Len(key) > 0 Then
+                If Not dict.Exists(key) Then
+                    colorIndex = dict.Count Mod (UBound(palette) - LBound(palette) + 1)
+                    dict.Add key, palette(colorIndex)
+                End If
+                master.Range(master.Cells(rr, firstCol), master.Cells(rr, firstCol).Offset(0, colsToColor - 1)).Interior.Color = dict(key)
+            End If
+        Next rr
     End If
 
 	Application.StatusBar = False
