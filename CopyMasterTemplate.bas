@@ -51,6 +51,51 @@ Public Sub CopyFromMasterTemplateToAllSheets()
 		End If
 	Next destWs
 
+	' Append: set labels and validations on master, and link cells across sheets
+	Dim masterWs As Worksheet
+	Dim sht As Worksheet
+	Set masterWs = ThisWorkbook.Worksheets("master")
+
+	' Labels on master
+	masterWs.Range("A21").Value = "Percentage"
+	masterWs.Range("A22").Value = "Capital"
+
+	' Data validation on master B21 (percentage list)
+	With masterWs.Range("B21").Validation
+		.Delete
+		.Add Type:=xlValidateList, AlertStyle:=xlValidAlertWarning, Operator:=xlBetween, _
+			Formula1:=".1%,.2%,.5%,1%,2%,3%,4%,5%,6%"
+		.IgnoreBlank = True
+		.InCellDropdown = True
+	End With
+
+	' Data validation on master B22 (capital list)
+	With masterWs.Range("B22").Validation
+		.Delete
+		.Add Type:=xlValidateList, AlertStyle:=xlValidAlertInformation, Operator:=xlBetween, _
+			Formula1:="500,1000,2000,3000, 5000, 10000,12500,15000, 20000, 30000,50000, 100000, 500000, 1000000"
+		.IgnoreBlank = True
+		.InCellDropdown = True
+	End With
+
+	' Set default selections
+	masterWs.Range("B21").Value = "1%"
+	masterWs.Range("B22").Value = 5000
+
+	' Link BS21 and BV21 on all non-master sheets to master selections
+	For Each sht In ThisWorkbook.Worksheets
+		If LCase(sht.Name) <> "master" Then
+			With sht.Range("BS21")
+				.Clear
+				.Formula = "='master'!B21"
+			End With
+			With sht.Range("BV21")
+				.Clear
+				.Formula = "='master'!B22"
+			End With
+		End If
+	Next sht
+
 CleanExit:
 	' Restore app state
 	Application.Calculation = originalCalc
